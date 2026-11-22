@@ -1,0 +1,10 @@
+file:///mnt/onboard/Books/book-01.kepub.epub
+file:///mnt/onboard/Books/book-02.kepub.epub
+file:///mnt/onboard/Books/book-03.kepub.epub
+file:///mnt/onboard/Books/book-04.kepub.epub
+file:///mnt/onboard/Books/book-05.kepub.epub
+file:///mnt/onboard/Books/book-06.kepub.epub
+file:///mnt/onboard/Books/book-07.kepub.epub
+file:///mnt/onboard/Books/book-08.kepub.epub
+file:///mnt/onboard/Books/book-09.kepub.epub
+file:///mnt/onboard/Books/book-10.kepub.epub

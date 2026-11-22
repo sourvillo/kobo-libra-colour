@@ -1,0 +1,13 @@
+--- a/etc/init.d/rcK
++++ b/etc/init.d/rcK
+@@ -24,6 +24,10 @@
+ 
+ platform_detect
+ 
++# Homerow safe-v3: prove a responsive exact armed process and stop that PID
++# before the stock stop/unmount sequence. Failure grants no clean marker.
++[ -x /usr/local/homerow-v3/shutdown-check.sh ] && /usr/local/homerow-v3/shutdown-check.sh
++
+ kill -SIGSTOP `pidof nickel`
+ kill -SIGSTOP `pidof sickel`
+ umount -a -r

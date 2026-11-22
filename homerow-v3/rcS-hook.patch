@@ -1,0 +1,51 @@
+--- a/etc/init.d/rcS
++++ b/etc/init.d/rcS
+@@ -338,6 +338,47 @@
+ 
+ rm /mnt/onboard/.kobo/sickel_frozen
+ 
++# Homerow safe-v3: synchronous exact-artifact gate. on-animator.sh is a
++# background job and is not an ordering barrier before Nickel.
++[ -x /usr/local/homerow-v3/pre-nickel.sh ] && /usr/local/homerow-v3/pre-nickel.sh
++
+ /usr/local/Kobo/hindenburg &
+-LIBC_FATAL_STDERR_=1 /usr/local/Kobo/nickel -platform kobo -skipFontLoad &
++# The launcher is the external crash/hang breaker for an exact armed boot.  It
++# execs stock Nickel directly when unarmed. If it is missing or non-executable,
++# fail closed before stock Nickel: persist disable, remove every active ryfront
++# spelling and the tmpfs arm, then prove both are absent. Never launch Nickel
++# against an active native module merely because the watchdog is unavailable.
++# HOMEROW_WATCHDOG_FALLBACK_BEGIN
++if [ -x /usr/local/homerow-v3/watchdog.sh ]; then
++    LIBC_FATAL_STDERR_=1 /usr/local/homerow-v3/watchdog.sh \
++        /usr/local/Kobo/nickel -platform kobo -skipFontLoad &
++else
++    HOMEROW_V3_STATE=/usr/local/homerow-v3/state
++    HOMEROW_V3_IMAGES=/usr/local/Kobo/imageformats
++    HOMEROW_V3_TMP=/tmp/homerow-v3
++    mkdir -p "$HOMEROW_V3_STATE" "$HOMEROW_V3_TMP" 2>/dev/null || true
++    umask 077
++    printf '%s\n' 'rcS:watchdog-missing-or-nonexec' \
++        > "$HOMEROW_V3_STATE/disable.new.$$" 2>/dev/null && \
++        sync && mv -f "$HOMEROW_V3_STATE/disable.new.$$" \
++        "$HOMEROW_V3_STATE/disable" 2>/dev/null && sync || true
++    rm -f "$HOMEROW_V3_IMAGES"/libryfront* \
++        "$HOMEROW_V3_TMP/arm" "$HOMEROW_V3_TMP/arm.new" \
++        "$HOMEROW_V3_TMP/heartbeat" "$HOMEROW_V3_TMP/heartbeat.new" \
++        2>/dev/null || true
++    sync
++    HOMEROW_V3_UNSAFE=0
++    for HOMEROW_V3_PLUGIN in "$HOMEROW_V3_IMAGES"/libryfront*; do
++        [ ! -e "$HOMEROW_V3_PLUGIN" ] && [ ! -L "$HOMEROW_V3_PLUGIN" ] || \
++            HOMEROW_V3_UNSAFE=1
++    done
++    [ ! -e "$HOMEROW_V3_TMP/arm" ] && [ ! -L "$HOMEROW_V3_TMP/arm" ] || \
++        HOMEROW_V3_UNSAFE=1
++    if [ "$HOMEROW_V3_UNSAFE" -eq 0 ]; then
++        LIBC_FATAL_STDERR_=1 /usr/local/Kobo/nickel -platform kobo -skipFontLoad &
++    else
++        /sbin/reboot 2>/dev/null || reboot 2>/dev/null || true
++    fi
++fi
++# HOMEROW_WATCHDOG_FALLBACK_END
+ [ $PLATFORM != freescale ] && rm -rf /dev/mmcblk1* && udevadm trigger &
